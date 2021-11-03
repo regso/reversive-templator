@@ -2,9 +2,10 @@
 
 namespace unit\models;
 
-use app\models\DummyTemplate;
+use app\models\DummyTemplate\DummyTemplate;
+use app\models\DummyTemplate\InvalidTemplateException;
+use app\models\DummyTemplate\ResultTemplateMismatchException;
 use Codeception\Test\Unit;
-use LogicException;
 use UnitTester;
 
 class DummyTemplateTest extends Unit
@@ -28,6 +29,10 @@ class DummyTemplateTest extends Unit
     {
     }
 
+    /**
+     * @throws InvalidTemplateException
+     * @throws ResultTemplateMismatchException
+     */
     public function testSimpleParam()
     {
         $template = DummyTemplate::fromResult(
@@ -37,24 +42,36 @@ class DummyTemplateTest extends Unit
         expect($template->getParams())->equals(['name' => 'Juni']);
     }
 
+    /**
+     * @throws InvalidTemplateException
+     * @throws ResultTemplateMismatchException
+     */
     public function testInvalidTemplate()
     {
-        $this->expectExceptionObject(new LogicException('Invalid template.'));
+        $this->expectExceptionObject(new InvalidTemplateException('Invalid template.'));
         DummyTemplate::fromResult(
             'Hello, my name is Juni.',
             "Hello, my name is {$this->doubleOpenedTag}name$this->onceClosedTag."
         );
     }
 
+    /**
+     * @throws InvalidTemplateException
+     * @throws ResultTemplateMismatchException
+     */
     public function testResultTemplateMismatch()
     {
-        $this->expectExceptionObject(new LogicException('Result not matches original template.'));
+        $this->expectExceptionObject(new ResultTemplateMismatchException('Result not matches original template.'));
         DummyTemplate::fromResult(
             'Hello, my lastname is Juni.',
             "Hello, my name is {$this->doubleOpenedTag}name$this->doubleClosedTag."
         );
     }
 
+    /**
+     * @throws InvalidTemplateException
+     * @throws ResultTemplateMismatchException
+     */
     public function testEmptyParam()
     {
         $template = DummyTemplate::fromResult(
@@ -64,6 +81,10 @@ class DummyTemplateTest extends Unit
         expect($template->getParams())->equals(['name' => '']);
     }
 
+    /**
+     * @throws InvalidTemplateException
+     * @throws ResultTemplateMismatchException
+     */
     public function testHtmlParam()
     {
         $template = DummyTemplate::fromResult(
@@ -73,6 +94,10 @@ class DummyTemplateTest extends Unit
         expect($template->getParams())->equals(['name' => '<robot>']);
     }
 
+    /**
+     * @throws InvalidTemplateException
+     * @throws ResultTemplateMismatchException
+     */
     public function testHtmlEncodedParam()
     {
         $template = DummyTemplate::fromResult(

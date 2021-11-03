@@ -1,8 +1,6 @@
 <?php
 
-namespace app\models;
-
-use LogicException;
+namespace app\models\DummyTemplate;
 
 /**
  *  Шаблонизатор, который на основе строки результата и шаблона восстанавливает переменные.
@@ -50,6 +48,8 @@ final class DummyTemplate
      * @param string $result
      * @param $template
      * @return static
+     * @throws InvalidTemplateException
+     * @throws ResultTemplateMismatchException
      */
     public static function fromResult(string $result, $template): self
     {
@@ -60,7 +60,7 @@ final class DummyTemplate
         $namedTemplate = preg_replace($pattern, '(?P<$2>.*?)', $quotedTemplate);
         preg_match($namedTemplate, $result, $params);
         if (!$params) {
-            throw new LogicException('Result not matches original template.');
+            throw new ResultTemplateMismatchException('Result not matches original template.');
         }
 
         $params = array_filter($params, function ($k) { return !is_int($k); }, ARRAY_FILTER_USE_KEY);
@@ -73,6 +73,7 @@ final class DummyTemplate
      * Валидация шаблона.
      *
      * @param string $template
+     * @throws InvalidTemplateException
      */
     private static function validate(string $template)
     {
@@ -98,7 +99,7 @@ final class DummyTemplate
         }
         if ($openTagCount) {
             // отсутствует закрывающий тег
-            throw new LogicException('Invalid template.');
+            throw new InvalidTemplateException('Invalid template.');
         }
     }
 
@@ -106,11 +107,12 @@ final class DummyTemplate
      * Вадидация при обработке открывающих тегов.
      *
      * @param int $openTagCount
+     * @throws InvalidTemplateException
      */
     private static function preValidateOpenTag(int $openTagCount)
     {
         if ($openTagCount == 2) {
-            throw new LogicException('Invalid template.');
+            throw new InvalidTemplateException('Invalid template.');
         }
     }
 
@@ -119,16 +121,17 @@ final class DummyTemplate
      *
      * @param int $openTagCount
      * @param int $closeTagCount
+     * @throws InvalidTemplateException
      */
     private static function preValidateCloseTag(int $openTagCount, int $closeTagCount)
     {
         if (!$openTagCount) {
             // встретился закрывающий тег, хотя не было открывающего
-            throw new LogicException('Invalid template.');
+            throw new InvalidTemplateException('Invalid template.');
         }
         if ($closeTagCount == $openTagCount) {
             // лишний закрывающий тег
-            throw new LogicException('Invalid template.');
+            throw new InvalidTemplateException('Invalid template.');
         }
     }
 
@@ -139,6 +142,7 @@ final class DummyTemplate
      * @param int $openTagCount
      * @param int $closeTagCount
      * @param string $symbol
+     * @throws InvalidTemplateException
      */
     private static function preValidateNoneTag(int $openTagCount, int $closeTagCount, string $symbol)
     {
@@ -146,11 +150,11 @@ final class DummyTemplate
             if (!$closeTagCount) {
                 // валидация на спецсимволы названия переменной шаблона
                 if (!mb_ereg('[a-z][a-z0-9_]*', $symbol)) {
-                    throw new LogicException('Invalid template.');
+                    throw new InvalidTemplateException('Invalid template.');
                 }
             } elseif ($openTagCount != $closeTagCount) {
                 // количество открывающих и закрывающих тегов не совпало
-                throw new LogicException('Invalid template.');
+                throw new InvalidTemplateException('Invalid template.');
             }
         }
     }
